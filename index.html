@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚾</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 世界棒球經典賽即時戰況 | 台灣 vs 日本</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Noto+Sans+TC:wght@400;700;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+
+<body>
+  <!-- Baseball Stadium Background -->
+  <div class="bg-stadium"></div>
+  <div class="bg-overlay"></div>
+
+  <div id="app">
+    <div class="main-container glass">
+      <header class="header">
+        <div class="header-titles">
+          <p class="subtitle">2026 WORLD BASEBALL CLASSIC™</p>
+          <h1>即時戰況與賽程數據</h1>
+        </div>
+      </header>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="tab-btn active" data-target="view-live">🔴 台灣 vs 日本 Live</button>
+        <button class="tab-btn" data-target="view-results">📅 賽程與結果</button>
+        <button class="tab-btn" data-target="view-probs">📊 奪冠機率分析</button>
+      </nav>
+
+      <!-- VIEW 1: Live Scoreboard -->
+      <section id="view-live" class="view-section active">
+        <div class="live-header">
+          <div class="status-badge pulse">LIVE</div>
+        </div>
+        <div class="scoreboard">
+          <!-- Taiwan Team -->
+          <div class="team tpe" id="team-tpe">
+            <div class="score" id="score-tpe">0</div>
+            <div class="team-info">
+              <span class="flag">🇹🇼</span>
+              <h2>TAIWAN</h2>
+              <p>中華台北</p>
+            </div>
+          </div>
+
+          <!-- Center Match Info -->
+          <div class="match-info">
+            <div class="inning-box glass">
+              <span id="inning-half" class="inning-arrow">▲</span>
+              <span class="inning-text"><span id="inning-number">1</span> 局</span>
+            </div>
+
+            <!-- Bases Diamond -->
+            <div class="diamond-container">
+              <div class="diamond">
+                <div class="base base-2" id="base-2"></div>
+                <div class="base base-3" id="base-3"></div>
+                <div class="base base-1" id="base-1"></div>
+                <div class="base base-home active"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Japan Team -->
+          <div class="team jpn" id="team-jpn">
+            <div class="team-info right">
+              <h2>JAPAN</h2>
+              <p>日本</p>
+              <span class="flag">🇯🇵</span>
+            </div>
+            <div class="score" id="score-jpn">0</div>
+          </div>
+        </div>
+
+        <!-- Count Board: B S O -->
+        <div class="count-board glass">
+          <div class="count-item balls">
+            <span class="label">B</span>
+            <div class="dots">
+              <div class="indicator b-dot" id="b-1"></div>
+              <div class="indicator b-dot" id="b-2"></div>
+              <div class="indicator b-dot" id="b-3"></div>
+            </div>
+          </div>
+          <div class="count-item strikes">
+            <span class="label">S</span>
+            <div class="dots">
+              <div class="indicator s-dot" id="s-1"></div>
+              <div class="indicator s-dot" id="s-2"></div>
+            </div>
+          </div>
+          <div class="count-item outs">
+            <span class="label">O</span>
+            <div class="dots">
+              <div class="indicator o-dot" id="o-1"></div>
+              <div class="indicator o-dot" id="o-2"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Play by Play Logs -->
+        <div class="play-by-play glass">
+          <div class="pbp-header">
+            <h3>即時文字轉播 (Play-by-play)</h3>
+            <span class="auto-update-text">自動更新中...</span>
+          </div>
+          <ul id="play-log">
+            <!-- Logs injected by JS -->
+            <li class="log-item highlight">比賽即將於 18:00 開始，敬請期待！</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- VIEW 2: Past Results -->
+      <section id="view-results" class="view-section hidden">
+        <div class="results-header">
+          <h2>最新賽程結果 (Pool C)</h2>
+          <p class="text-muted">預賽 C 組 東京巨蛋</p>
+        </div>
+        <div class="results-grid" id="results-container">
+          <!-- Results injected by JS -->
+        </div>
+      </section>
+
+      <!-- VIEW 3: Championship Probabilities -->
+      <section id="view-probs" class="view-section hidden">
+        <div class="probs-header">
+          <h2>2026 奪冠機率預測模型</h2>
+          <p class="text-muted">基於各隊基礎戰力與當前戰績動態計算 (即時更新)</p>
+        </div>
+        <div class="chart-container" id="probs-container">
+          <!-- Probabilities injected by JS -->
+        </div>
+      </section>
+    </div>
+
+    <!-- Admin Controls Toggle -->
+    <button id="toggle-admin" class="admin-toggle-btn" title="打開手動計分板">⚙️ 控制面板 (Admin)</button>
+
+    <!-- Admin Controls Panel -->
+    <div id="admin-panel" class="admin-panel glass hidden">
+      <div class="admin-header">
+        <h3>即時賽況控制台</h3>
+        <button id="close-admin" class="close-btn">&times;</button>
+      </div>
+      <p class="admin-desc">目前時間未到 18:00，您可以透過此控制台手動更新或模擬比賽狀況。</p>
+
+      <div class="controls-section">
+        <h4>球數與出局數</h4>
+        <div class="btn-group">
+          <button id="btn-ball" class="btn primary">壞球 (B)</button>
+          <button id="btn-strike" class="btn danger">好球 (S)</button>
+          <button id="btn-foul" class="btn outline">界外球</button>
+        </div>
+        <div class="btn-group mt-2">
+          <button id="btn-out" class="btn danger-outline">出局 (Out)</button>
+          <button id="btn-hit" class="btn success">安打上壘</button>
+        </div>
+      </div>
+
+      <div class="controls-section">
+        <h4>壘包狀態</h4>
+        <div class="btn-group">
+          <label><input type="checkbox" id="chk-base-1"> 一壘有人</label>
+          <label><input type="checkbox" id="chk-base-2"> 二壘有人</label>
+          <label><input type="checkbox" id="chk-base-3"> 三壘有人</label>
+        </div>
+      </div>
+
+      <div class="controls-section">
+        <h4>局數與得分</h4>
+        <div class="btn-group space-between">
+          <button id="btn-score-tpe" class="btn score-btn p-blue">台灣 +1</button>
+          <button id="btn-score-jpn" class="btn score-btn p-red">日本 +1</button>
+        </div>
+        <div class="btn-group mt-2">
+          <button id="btn-next-inning" class="btn outline">換局 (Next Inning)</button>
+          <button id="btn-reset" class="btn outline-danger">重設比賽 (Reset)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+
+</html>
