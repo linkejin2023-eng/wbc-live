@@ -679,6 +679,12 @@ label {
   margin-bottom: 15px;
 }
 
+/* Fix for desktop browser select options */
+.game-select option {
+  color: #000;
+  background: #fff;
+}
+
 /* Shared Header for new views */
 .results-header,
 .probs-header {
