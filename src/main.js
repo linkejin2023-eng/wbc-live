@@ -89,7 +89,7 @@ async function fetchFullTournament() {
     if (data.dates) {
       data.dates.forEach(dateObj => {
         dateObj.games.forEach(g => {
-          if (g.seriesDescription === 'Exhibition Game') return;
+          if (g.seriesDescription === 'Exhibition Game' || g.gameType === 'E') return;
 
           const awayTeamName = g.teams.away.team.name;
           const homeTeamName = g.teams.home.team.name;
@@ -138,7 +138,7 @@ async function fetchLiveData() {
     if (data.dates) {
       data.dates.forEach(dateObj => {
         dateObj.games.forEach(g => {
-          if (g.seriesDescription === 'Exhibition Game') return;
+          if (g.seriesDescription === 'Exhibition Game' || g.gameType === 'E') return;
           fetchedToday.push(formatGameData(g, dateObj.date));
         });
       });
@@ -368,6 +368,10 @@ function renderResults() {
     poolHeader.innerText = pool;
     resultsContainer.appendChild(poolHeader);
 
+    // Create a specific grid for this pool
+    const poolGrid = document.createElement('div');
+    poolGrid.className = 'results-grid';
+
     const gamesInPool = grouped[pool];
     gamesInPool.forEach(match => {
       const dateObj = new Date(match.rawDate);
@@ -388,8 +392,10 @@ function renderResults() {
                 </div>
             </div>
             `;
-      resultsContainer.appendChild(card);
+      poolGrid.appendChild(card);
     });
+
+    resultsContainer.appendChild(poolGrid);
   });
 }
 
