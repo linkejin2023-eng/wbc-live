@@ -72,10 +72,8 @@ function getTeamNameTc(name) {
 }
 
 // ======= API Fetching =======
-// Get today's date in YYYY-MM-DD
-const todayStr = new Date().toISOString().split('T')[0];
 // Tournament dates for full fetch
-const startDate = "2026-03-01";
+const startDate = "2026-02-25";
 const endDate = "2026-03-31";
 
 // Fetch full tournament data once to populate Results and Probabilities
@@ -86,13 +84,10 @@ async function fetchFullTournament() {
     const data = await res.json();
 
     let fetchedPast = [];
-    let fetchedToday = [];
     let records = {};
 
     if (data.dates) {
       data.dates.forEach(dateObj => {
-        const dateMatchesToday = (dateObj.date === todayStr);
-
         dateObj.games.forEach(g => {
           const awayTeamName = g.teams.away.team.name;
           const homeTeamName = g.teams.home.team.name;
@@ -107,16 +102,6 @@ async function fetchFullTournament() {
           if (g.status.statusCode === 'F' || g.status.statusCode === 'C' || g.status.statusCode === 'O') {
             fetchedPast.push(gameData);
           }
-          if (dateMatchesToday) {
-            fetchedToday.push(gameData);
-          }
-          // If no games today, but game is live, include it anyway
-          if (g.status.statusCode === 'I' || g.status.statusCode === 'S') {
-            // Avoid duplicates if already added because it's today
-            if (!fetchedToday.find(t => t.id === gameData.id)) {
-              fetchedToday.push(gameData);
-            }
-          }
         });
       });
     }
@@ -128,24 +113,32 @@ async function fetchFullTournament() {
     teamRecords = records;
     calculateAndRenderProbs();
 
-    todayGames = fetchedToday;
-    updateSelector();
-    updateUI();
+    // Use fetchLiveData to specifically populate the active/upcoming games dropdown
+    await fetchLiveData();
 
   } catch (err) {
     console.error("Error fetching full tournament:", err);
   }
 }
 
-// Fetch just today's live data rapidly
+// Fetch just live/today data rapidly
 async function fetchLiveData() {
   try {
     const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=51&hydrate=linescore,team`;
     const res = await fetch(url);
     const data = await res.json();
 
-    if (data.dates && data.dates.length > 0) {
-      todayGames = data.dates[0].games.map(g => formatGameData(g, data.dates[0].date));
+    let fetchedToday = [];
+    if (data.dates) {
+      data.dates.forEach(dateObj => {
+        dateObj.games.forEach(g => {
+          fetchedToday.push(formatGameData(g, dateObj.date));
+        });
+      });
+    }
+
+    if (fetchedToday.length > 0) {
+      todayGames = fetchedToday;
       updateSelector();
       updateUI();
     }
@@ -343,27 +336,47 @@ function renderResults() {
     return;
   }
 
-  // Render up to 20 past games
-  pastGames.slice(0, 20).forEach(match => {
-    const dateObj = new Date(match.rawDate);
-    const dateStr = `${dateObj.getMonth() + 1}/${dateObj.getDate()} ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
-    const card = document.createElement('div');
-    card.className = 'result-card glass';
-    card.innerHTML = `
-        <div class="rc-date">${dateStr} | ${match.description}</div>
-        <div class="rc-match">
-            <div class="rc-team away">
-            <span>${getTeamNameTc(match.awayTeam)}</span>
-            <span>${getTeamFlag(match.awayTeam)}</span>
+  // Group by Pool / Description
+  const grouped = {};
+  pastGames.forEach(match => {
+    const desc = match.description || "其他賽事";
+    if (!grouped[desc]) grouped[desc] = [];
+    grouped[desc].push(match);
+  });
+
+  Object.keys(grouped).sort().forEach(pool => {
+    // Pool Header
+    const poolHeader = document.createElement('h3');
+    poolHeader.style.color = '#ffd700'; // Gold color for headers
+    poolHeader.style.marginTop = '20px';
+    poolHeader.style.marginBottom = '10px';
+    poolHeader.style.borderBottom = '1px solid rgba(255,215,0,0.3)';
+    poolHeader.style.paddingBottom = '5px';
+    poolHeader.innerText = pool;
+    resultsContainer.appendChild(poolHeader);
+
+    const gamesInPool = grouped[pool];
+    gamesInPool.forEach(match => {
+      const dateObj = new Date(match.rawDate);
+      const dateStr = `${dateObj.getMonth() + 1}/${dateObj.getDate()} ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+      const card = document.createElement('div');
+      card.className = 'result-card glass';
+      card.innerHTML = `
+            <div class="rc-date">${dateStr} | ${match.status}</div>
+            <div class="rc-match">
+                <div class="rc-team away">
+                <span>${getTeamNameTc(match.awayTeam)}</span>
+                <span>${getTeamFlag(match.awayTeam)}</span>
+                </div>
+                <div class="rc-score">${match.awayScore} - ${match.homeScore}</div>
+                <div class="rc-team home">
+                <span>${getTeamFlag(match.homeTeam)}</span>
+                <span>${getTeamNameTc(match.homeTeam)}</span>
+                </div>
             </div>
-            <div class="rc-score">${match.awayScore} - ${match.homeScore}</div>
-            <div class="rc-team home">
-            <span>${getTeamFlag(match.homeTeam)}</span>
-            <span>${getTeamNameTc(match.homeTeam)}</span>
-            </div>
-        </div>
-        `;
-    resultsContainer.appendChild(card);
+            `;
+      resultsContainer.appendChild(card);
+    });
   });
 }
 
