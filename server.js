@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import https from 'https';
 
 // Setup Express and Socket.IO
 const app = express();
@@ -30,38 +31,62 @@ app.get(/^(.*)$/, (req, res) => {
 });
 
 // In-Memory Game State
-let gameState = {
-    tpe: 0,
-    jpn: 0,
-    inning: 1,
-    isTopHalf: true, // true = top (▲), false = bottom (▼)
-    balls: 0,
-    strikes: 0,
-    outs: 0,
-    bases: { 1: false, 2: false, 3: false },
-    logs: ['比賽即將於 18:00 開始，目前為賽前練習。']
-};
+let gamesList = [];
+
+function fetchMBData() {
+    const url = 'https://statsapi.mlb.com/api/v1/schedule?sportId=1&hydrate=linescore,team';
+    https.get(url, (resp) => {
+        let data = '';
+        resp.on('data', (chunk) => { data += chunk; });
+        resp.on('end', () => {
+            try {
+                const parsed = JSON.parse(data);
+                if (parsed.dates && parsed.dates.length > 0) {
+                    const games = parsed.dates[0].games.map(g => {
+                        const isLive = g.status.statusCode === 'I' || g.status.statusCode === 'S' || g.status.statusCode === 'F' || g.status.statusCode === 'O';
+                        return {
+                            id: g.gamePk,
+                            awayTeam: g.teams.away.team.name,
+                            homeTeam: g.teams.home.team.name,
+                            awayScore: g.teams.away.score || 0,
+                            homeScore: g.teams.home.score || 0,
+                            status: g.status.detailedState,
+                            statusCode: g.status.statusCode,
+                            inning: g.linescore ? g.linescore.currentInning : 1,
+                            isTopHalf: g.linescore ? (g.linescore.inningHalf === 'Top') : true,
+                            balls: g.linescore ? g.linescore.balls : 0,
+                            strikes: g.linescore ? g.linescore.strikes : 0,
+                            outs: g.linescore ? g.linescore.outs : 0,
+                            bases: {
+                                1: g.linescore?.offense ? !!g.linescore.offense.first : false,
+                                2: g.linescore?.offense ? !!g.linescore.offense.second : false,
+                                3: g.linescore?.offense ? !!g.linescore.offense.third : false
+                            }
+                        };
+                    });
+                    gamesList = games;
+                    io.emit('games-updated', gamesList);
+                }
+            } catch (e) {
+                console.error("Error parsing MLB API", e);
+            }
+        });
+    }).on("error", (err) => {
+        console.error("Error fetching from MLB:", err.message);
+    });
+}
+
+// Initial fetch
+fetchMBData();
+
+// Poll every 10 seconds
+setInterval(fetchMBData, 10000);
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    // Send the current state to the newly connected client
-    socket.emit('state-updated', gameState);
-
-    // Listen for updates from the admin
-    socket.on('update-state', (data) => {
-        // Basic authorization check
-        if (data.password !== ADMIN_SECRET) {
-            socket.emit('error', { message: 'Unauthorized: Incorrect password' });
-            return;
-        }
-
-        // Update server state
-        gameState = { ...gameState, ...data.newState };
-
-        // Broadcast the updated state to ALL clients
-        io.emit('state-updated', gameState);
-    });
+    // Send the current list of games to newly connected clients
+    socket.emit('games-updated', gamesList);
 
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
