@@ -1,46 +1,63 @@
-# 2026 WBC 即時戰況與賽程數據面板
+# ⚾ WBC Live Scoreboard (世界棒球經典賽 即時戰況儀表板)
 
-這是一個專為 2026 年世界棒球經典賽 (World Baseball Classic) 打造的單頁式前端專案，使用 Vite + Vanilla JS + CSS Glassmorphism 實作。
+這是一個專為 **World Baseball Classic (世界棒球經典賽)** 打造的純前端即時戰況與數據儀表板。
+只需開啟網頁，即可自動獲取最新比分、完賽紀錄與各隊奪冠機率分析。
 
-## 網站功能
-- **🔴 台灣 vs 日本 Live**：提供即時的計分板與好壞球、壘包戰況，並包含一個右側隱藏的「管理控制台 (Admin Panel)」可以單機模擬擊球與好壞球變化。
-- **📅 賽程與結果**：顯示 2026 WBC 已完賽的賽程結果比分卡。
-- **📊 奪冠機率分析**：基於動態數學模型，能隨著 Live 計分板上的台日戰況即時連動，呈現各隊長條圖的奪冠機率變化。
+### 🌍 **[線上看即時戰況 (Live Demo)](https://linkejin2023-eng.github.io/wbc-live/)**
 
-## 專案技術棧
-- **架構**：HTML5 + Vanilla JavaScript (ESM)
-- **建置工具**：Vite 8
-- **樣式**：純 CSS (無依賴 Tailwind 等框架，手刻玻璃擬物化 Glassmorphism 質感 UI)
+---
 
-## 如何在本機運行開發環境
-1. 確認已經安裝 Node.js (建議 v18 以上)。
-2. Clone 專案後進入資料夾：
-   ```bash
-   cd wbc-live
-   ```
-3. 安裝依賴套件：
+## ✨ 核心功能 (Features)
+
+1. **純前端無伺服器架構 (Serverless Static Site)**
+   - 全面移除 Node.js 後端，大幅提升讀取速度。
+   - 直接從前端使用 `fetch()` 串接 MLB 官方 Stats API 取回比賽資料。
+   - 可輕鬆寄存在 GitHub Pages、Surge、Vercel 等任何靜態網站代管服務上。
+
+2. **精準的 WBC 賽事過濾器 (WBC Exclusive)**
+   - 強制鎖定 API 的 `sportId=51` (國際棒球賽事)。
+   - 自動判別 `gameType === 'E'` 來精準過濾掉所有混雜在內的大聯盟春訓熱身賽（Exhibition Games）。
+   - 保證網頁上呈現的完全是純粹的 WBC 國家隊對決！
+
+3. **四大即時數據儀表板**
+   - **🔴 即時戰況 (Live Box Score)**: 智慧辨識目前您的時區（橫跨昨、今、明三天抓取），將「現正進行中(In Progress)」與「即將開打(Scheduled)」的比賽優先推送到畫面上方的下拉選單供您隨時切換。包含好壞球數(Count)、壘包狀況(Bases)與半局(Inning)皆即時更新。
+   - **📅 賽程與結果 (Past Results)**: 自動抓取本屆所有已完賽（包含提前結束 `Completed Early` / `abstractGameState: Final`）的戰績。並貼心地依據分組（`Pool A`、`Pool B` 等）排版，並附上真實比賽場地名稱（如 Tokyo Dome）。
+   - **📊 奪冠機率分析 (Championship Probabilities)**: 自動爬取 API 中各國目前的勝敗場次 (`leagueRecord`)，導入積分演算法並繪製為動態的機率長條圖排行榜。
+   - **⚙️ 賽局設定 (Settings)**: 保留未來的擴充空間。
+
+---
+
+## 🚀 開發與本地執行 (Local Development)
+
+本專案使用 Vite 建置，開發環境十分輕量簡單：
+
+1. **安裝依賴套件 (Install dependencies)**
    ```bash
    npm install
    ```
-4. 啟動開發伺服器：
+
+2. **啟動本地測試環境 (Start the dev server)**
    ```bash
    npm run dev
    ```
-5. 使用瀏覽器打開 `http://localhost:5173`。
+   即可在 `http://localhost:5173` 預覽。
 
-## 如何部署到 GitHub Pages
-
-1. 在 `vite.config.js` 檔案中，設定 `base` 為你的儲存庫名稱 (例如 `base: '/wbc-live/'`)。
-2. 執行建置：
+3. **打包發布 (Build for production)**
    ```bash
    npm run build
    ```
-3. 你的靜態檔案將會產生在 `dist` 目錄下。
-4. 使用 GitHub Pages 或工具 (例如 `gh-pages` npm 套件) 來把 `dist` 目錄推送到 `gh-pages` 分支。
-   ```bash
-   npm init -y  # 確保 package.json 正確
-   npm install gh-pages --save-dev
-   npm run deploy # 需在 package.json 設定 "deploy": "gh-pages -d dist"
-   ```
+   打包後的靜態檔案會產出於 `dist/` 資料夾中。
 
-由 AI Assistant 開發設計。
+---
+
+## 📦 自動部署 (Deployment)
+
+目前專案已經設定好與 **GitHub Pages** 的整合：
+您可以修改完程式碼後，透過以下指令一鍵推送打包結果至線上：
+
+```bash
+npm run build
+npx gh-pages -d dist
+```
+
+> **備註**: `vite.config.js` 的 `base` 路徑請務必符合您的 GitHub Repository 名稱 (如 `/wbc-live/`) 才能正確載入 CSS/JS 資源。
