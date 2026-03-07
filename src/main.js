@@ -101,7 +101,7 @@ async function fetchFullTournament() {
           const gameData = formatGameData(g, dateObj.date);
 
           // Categorize games
-          if (g.status.statusCode === 'F' || g.status.statusCode === 'C' || g.status.statusCode === 'O') {
+          if (g.status.abstractGameState === 'Final') {
             fetchedPast.push(gameData);
           }
         });
@@ -172,6 +172,8 @@ function formatGameData(g, dateStr) {
     homeScore: g.teams.home.score || 0,
     status: g.status.detailedState,
     statusCode: g.status.statusCode,
+    abstractState: g.status.abstractGameState,
+    venue: g.venue ? g.venue.name : '',
     inning: g.linescore ? g.linescore.currentInning : 1,
     isTopHalf: g.linescore ? (g.linescore.inningHalf === 'Top') : true,
     balls: g.linescore ? g.linescore.balls : 0,
@@ -379,7 +381,7 @@ function renderResults() {
       const card = document.createElement('div');
       card.className = 'result-card glass';
       card.innerHTML = `
-            <div class="rc-date">${dateStr} | ${match.status}</div>
+            <div class="rc-date">${dateStr} | ${match.venue}</div>
             <div class="rc-match">
                 <div class="rc-team away">
                 <span>${getTeamNameTc(match.awayTeam)}</span>
