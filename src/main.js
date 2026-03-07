@@ -89,6 +89,8 @@ async function fetchFullTournament() {
     if (data.dates) {
       data.dates.forEach(dateObj => {
         dateObj.games.forEach(g => {
+          if (g.seriesDescription === 'Exhibition Game') return;
+
           const awayTeamName = g.teams.away.team.name;
           const homeTeamName = g.teams.home.team.name;
 
@@ -121,10 +123,14 @@ async function fetchFullTournament() {
   }
 }
 
-// Fetch just live/today data rapidly
+// Fetch just live/today data rapidly (spanning -1 to +1 day to catch all timezone games)
 async function fetchLiveData() {
   try {
-    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=51&hydrate=linescore,team`;
+    const now = new Date();
+    const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().split('T')[0];
+    const tomorrowStr = new Date(now.getTime() + 86400000).toISOString().split('T')[0];
+
+    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=51&startDate=${yesterdayStr}&endDate=${tomorrowStr}&hydrate=linescore,team`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -132,12 +138,19 @@ async function fetchLiveData() {
     if (data.dates) {
       data.dates.forEach(dateObj => {
         dateObj.games.forEach(g => {
+          if (g.seriesDescription === 'Exhibition Game') return;
           fetchedToday.push(formatGameData(g, dateObj.date));
         });
       });
     }
 
     if (fetchedToday.length > 0) {
+      // Sort to push Live games to the top
+      fetchedToday.sort((a, b) => {
+        if (a.statusCode === 'I' && b.statusCode !== 'I') return -1;
+        if (b.statusCode === 'I' && a.statusCode !== 'I') return 1;
+        return new Date(a.rawDate) - new Date(b.rawDate);
+      });
       todayGames = fetchedToday;
       updateSelector();
       updateUI();
